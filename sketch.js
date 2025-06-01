@@ -4,13 +4,13 @@ let minSize = 10;
 let maxSize = 150;
 let minAlp = 200;
 let back_col;
-let canvas_size = 500;
-let quart_size = canvas_size/4;
+let canvas_size;
+let quart_size;
 let pg;
-let size1 = canvas_size;
+let size1;
 let pg2;
-let size2 = size1;
-let size3 = quart_size;
+let size2;
+let size3;
 let time_scale=1500;
 let min_col = 50;
 let max_col = 255;
@@ -21,6 +21,13 @@ let kaleidoscopeBuffer;
 function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
   createCanvas(windowWidth, windowHeight);
+
+  // Scale up the canvas_size to match screen dimensions
+  canvas_size = max(windowWidth, windowHeight);
+  quart_size = canvas_size/4;
+  size1 = canvas_size;
+  size2 = size1;
+  size3 = quart_size;
 
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
@@ -52,7 +59,42 @@ function setup() {
 }
 
 function windowResized() {
+  // Recalculate sizes and recreate graphics buffers for new screen size
+  canvas_size = max(windowWidth, windowHeight);
+  quart_size = canvas_size/4;
+  size1 = canvas_size;
+  size2 = size1;
+  size3 = quart_size;
+
   resizeCanvas(windowWidth, windowHeight);
+
+  // Recreate all graphics buffers with new sizes
+  pg = createGraphics(size1, size1);
+  pg2 = createGraphics(size2, size2);
+  pg3 = createGraphics(size3, size3);
+  triangleMask = createGraphics(quart_size, quart_size);
+  rotatedBuffer = createGraphics(quart_size, quart_size);
+  kaleidoscopeBuffer = createGraphics(canvas_size, canvas_size);
+
+  pg.angleMode(DEGREES);
+  pg2.angleMode(DEGREES);
+  triangleMask.angleMode(DEGREES);
+  rotatedBuffer.angleMode(DEGREES);
+  kaleidoscopeBuffer.angleMode(DEGREES);
+
+  pg.background(back_col);
+  pg.noStroke();
+  pg.translate(quart_size,quart_size);
+
+  // Recreate triangular mask
+  triangleMask.background(0);
+  triangleMask.fill(255);
+  triangleMask.noStroke();
+  triangleMask.triangle(0, 0, quart_size, 0, quart_size, quart_size);
+
+  // Regenerate objects for new size
+  objs = [];
+  drawArr(pg);
 }
 
 function genRand() {
@@ -170,20 +212,10 @@ function draw() {
     mirror_half_right(kaleidoscopeBuffer);
     mirror_whole_down(kaleidoscopeBuffer);
 
-    // Calculate scale factor to fill the screen while preserving proportions
-    let scale_factor = max(width / canvas_size, height / canvas_size);
-
-    // Calculate the scaled size
-    let scaled_size = canvas_size * scale_factor;
-
-    // Calculate the position to center the cropped animation
-    let offset_x = (scaled_size - width) / 2;
-    let offset_y = (scaled_size - height) / 2;
-
-    // Draw the scaled kaleidoscope with cropping
-    copy(kaleidoscopeBuffer, offset_x / scale_factor, offset_y / scale_factor,
-         width / scale_factor, height / scale_factor,
-         0, 0, width, height);
+    // Draw the kaleidoscope centered on screen at native resolution
+    let offset_x = (width - canvas_size) / 2;
+    let offset_y = (height - canvas_size) / 2;
+    image(kaleidoscopeBuffer, offset_x, offset_y);
 
     console.log("Drawing "  + frameCount + " angle: " + angle);
   }
