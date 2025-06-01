@@ -1,5 +1,5 @@
 let objs = [];
-let maxNum = 12000; // Increased from 3000 to 12000
+let shapeCount = 12000; // Renamed from maxNum for clarity
 let minSize = 10;
 let maxSize = 150;
 let minAlp = 200;
@@ -55,7 +55,7 @@ function setup() {
   background(back_col);
   drawArr(pg);
   frameRate(30);
-  console.log("Setup done with " + maxNum + " shapes!");
+  console.log("Setup done with " + shapeCount + " shapes!");
 }
 
 function windowResized() {
@@ -118,8 +118,8 @@ function genRand() {
 }
 
 function drawArr(buf) {
-  for (i=0; i < maxNum; i++){
-    if(objs.length < maxNum) {
+  for (i=0; i < shapeCount; i++){
+    if(objs.length < shapeCount) {
       let newobj = genRand();
       objs.push(newobj);
     }
