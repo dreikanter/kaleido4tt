@@ -5,6 +5,7 @@ let maxSize = 150;
 let minAlp = 200;
 let back_col;
 let canvas_size;
+let render_size; // New: actual rendering resolution
 let quart_size;
 let pg;
 let size1;
@@ -27,18 +28,21 @@ function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
   createCanvas(windowWidth, windowHeight);
 
-  canvas_size = max(windowWidth, windowHeight);
-  quart_size = canvas_size/4;
-  size1 = canvas_size;
+  // Calculate sizes
+  canvas_size = max(windowWidth, windowHeight); // Display size (fills viewport)
+  render_size = min(canvas_size, 1000); // Render size (limited to 1000px for performance)
+  quart_size = render_size/4;
+  size1 = render_size;
   size2 = size1;
   size3 = quart_size;
 
+  // Create graphics buffers at reduced resolution
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
   pg3 = createGraphics(size3, size3);
   triangleMask = createGraphics(quart_size, quart_size);
   rotatedBuffer = createGraphics(quart_size, quart_size);
-  kaleidoscopeBuffer = createGraphics(canvas_size, canvas_size);
+  kaleidoscopeBuffer = createGraphics(render_size, render_size);
 
   pg.angleMode(DEGREES);
   pg2.angleMode(DEGREES);
@@ -66,20 +70,23 @@ function setup() {
 }
 
 function windowResized() {
-  canvas_size = max(windowWidth, windowHeight);
-  quart_size = canvas_size/4;
-  size1 = canvas_size;
+  // Calculate sizes
+  canvas_size = max(windowWidth, windowHeight); // Display size (fills viewport)
+  render_size = min(canvas_size, 1000); // Render size (limited to 1000px for performance)
+  quart_size = render_size/4;
+  size1 = render_size;
   size2 = size1;
   size3 = quart_size;
 
   resizeCanvas(windowWidth, windowHeight);
 
+  // Create graphics buffers at reduced resolution
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
   pg3 = createGraphics(size3, size3);
   triangleMask = createGraphics(quart_size, quart_size);
   rotatedBuffer = createGraphics(quart_size, quart_size);
-  kaleidoscopeBuffer = createGraphics(canvas_size, canvas_size);
+  kaleidoscopeBuffer = createGraphics(render_size, render_size);
 
   pg.angleMode(DEGREES);
   pg2.angleMode(DEGREES);
@@ -101,8 +108,8 @@ function windowResized() {
 }
 
 function genRand() {
-  let x = random(-quart_size-maxSize,canvas_size-maxSize);
-  let y = random(-quart_size-maxSize,canvas_size-maxSize);
+  let x = random(-quart_size-maxSize,render_size-maxSize);
+  let y = random(-quart_size-maxSize,render_size-maxSize);
   let x2 = random(random(4) % 2 == 1? x + random(maxSize/4) : x - random(maxSize/4));
   let y2 = random(random(4) % 2 == 1? y + random(maxSize/4) : y - random(maxSize/4));
   let x3 = random(random(4) % 2 == 1? x + random(maxSize/4) : x - random(maxSize/4));
@@ -197,7 +204,7 @@ function mirror_quart_right(buffer) {
 function mirror_half_down(buffer){
   buffer.push();
   buffer.scale(1,-1);
-  buffer.copy(buffer, 0,0,canvas_size,quart_size,0,-quart_size,canvas_size,-quart_size);
+  buffer.copy(buffer, 0,0,render_size,quart_size,0,-quart_size,render_size,-quart_size);
   buffer.pop();
 }
 
@@ -211,7 +218,7 @@ function mirror_half_right(buffer){
 function mirror_whole_down(buffer){
   buffer.push();
   buffer.scale(1,-1);
-  buffer.copy(buffer, 0,0,canvas_size,quart_size*2,0,-quart_size*2,canvas_size,-quart_size*2);
+  buffer.copy(buffer, 0,0,render_size,quart_size*2,0,-quart_size*2,render_size,-quart_size*2);
   buffer.pop();
 }
 
@@ -236,7 +243,7 @@ function drawFPS() {
   push();
   fill(255, 255, 255, 200); // White with some transparency
   stroke(0);
-  strokeWeight(2);
+  strokeWeight(1);
   textAlign(RIGHT, TOP);
   textSize(12);
   text(`FPS: ${avgFPS.toFixed(1)}`, width - 10, 10);
@@ -272,9 +279,12 @@ function draw() {
     mirror_half_right(kaleidoscopeBuffer);
     mirror_whole_down(kaleidoscopeBuffer);
 
+    // Scale up the rendered kaleidoscope to fill viewport
     let offset_x = (width - canvas_size) / 2;
     let offset_y = (height - canvas_size) / 2;
-    image(kaleidoscopeBuffer, offset_x, offset_y);
+
+    // Draw the kaleidoscope buffer scaled up to canvas_size
+    image(kaleidoscopeBuffer, offset_x, offset_y, canvas_size, canvas_size);
 
     // Draw FPS counter in top right
     drawFPS();
