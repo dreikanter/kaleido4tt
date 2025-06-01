@@ -114,7 +114,7 @@ function genRand() {
 }
 
 function drawArr(buf) {
-  for (i=0; i < shapeCount; i++){
+  for (let i=0; i < shapeCount; i++){  // FIX 1: Added 'let' declaration
     if(objs.length < shapeCount) {
       let newobj = genRand();
       objs.push(newobj);
