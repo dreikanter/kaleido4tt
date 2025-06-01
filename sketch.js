@@ -239,14 +239,21 @@ function updateFPS() {
 }
 
 function drawFPS() {
-  // Draw FPS in top right corner
+  // Draw FPS in top right corner with high contrast outline
   push();
-  fill(255, 255, 255, 200); // White with some transparency
-  stroke(0);
-  strokeWeight(1);
+
+  let fpsText = `FPS: ${avgFPS.toFixed(1)}`;
+
+  // Set text properties
   textAlign(RIGHT, TOP);
-  textSize(12);
-  text(`FPS: ${avgFPS.toFixed(1)}`, width - 10, 10);
+  textSize(14);
+
+  // Draw white text with thick black outline for maximum contrast
+  fill(255);
+  stroke(0);
+  strokeWeight(3); // Increased stroke weight for better contrast
+  text(fpsText, width - 10, 10);
+
   pop();
 }
 
