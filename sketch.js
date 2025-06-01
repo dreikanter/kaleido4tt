@@ -5,7 +5,7 @@ let maxSize = 150;
 let minAlp = 200;
 let back_col;
 let canvas_size = 500;
-let quart_size=canvas_size/4;
+let quart_size = canvas_size/4;
 let pg;
 let size1 = canvas_size;
 let pg2;
@@ -14,29 +14,32 @@ let size3 = quart_size;
 let time_scale=1500;
 let min_col = 50;
 let max_col = 255;
-let triangleMask; // New graphics buffer for triangular mask
-let rotatedBuffer; // Buffer for the rotated result
+let triangleMask;
+let rotatedBuffer;
+let kaleidoscopeBuffer;
 
 function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
-  createCanvas(canvas_size, canvas_size);
+  createCanvas(windowWidth, windowHeight);
+
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
-  pg3 = createGraphics(size3,size3);
-  triangleMask = createGraphics(quart_size, quart_size); // Triangular mask buffer
-  rotatedBuffer = createGraphics(quart_size, quart_size); // Buffer for rotated triangle
+  pg3 = createGraphics(size3, size3);
+  triangleMask = createGraphics(quart_size, quart_size);
+  rotatedBuffer = createGraphics(quart_size, quart_size);
+  kaleidoscopeBuffer = createGraphics(canvas_size, canvas_size);
 
   pg.angleMode(DEGREES);
   pg2.angleMode(DEGREES);
   triangleMask.angleMode(DEGREES);
   rotatedBuffer.angleMode(DEGREES);
+  kaleidoscopeBuffer.angleMode(DEGREES);
   angleMode(DEGREES);
 
   pg.background(back_col);
   pg.noStroke();
   pg.translate(quart_size,quart_size);
 
-  // Create triangular mask (upper triangle)
   triangleMask.background(0);
   triangleMask.fill(255);
   triangleMask.noStroke();
@@ -46,6 +49,10 @@ function setup() {
   drawArr(pg);
   frameRate(30);
   console.log("Setup done!");
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 function genRand() {
@@ -92,63 +99,58 @@ function drawPrim(buf, prim) {
   buf.rotate(prim[6]);
 }
 
-function createTriangularReflection() {
-  // Clear the rotated buffer
+function createTriangularReflection(buffer) {
   rotatedBuffer.background(back_col);
-
-  // Copy the upper triangle from pg3 to rotatedBuffer
   rotatedBuffer.copy(pg3, 0, 0, quart_size, quart_size, 0, 0, quart_size, quart_size);
 
-  // Apply triangular mask to keep only upper triangle
   let maskedImage = rotatedBuffer.get();
   maskedImage.mask(triangleMask);
 
-  // Draw the masked triangle
-  image(maskedImage, 0, 0);
+  buffer.image(maskedImage, 0, 0);
 
-  // Create the lower triangle by rotating and flipping the upper triangle
-  push();
-  translate(quart_size, quart_size);
-  rotate(180);
-  scale(1, -1);
-  image(maskedImage, 0, 0);
-  pop();
+  buffer.push();
+  buffer.translate(quart_size, quart_size);
+  buffer.rotate(180);
+  buffer.scale(1, -1);
+  buffer.image(maskedImage, 0, 0);
+  buffer.pop();
 }
 
-function mirror_quart_right() {
-  push();
-  scale(-1,1);
-  copy(0,0,quart_size,quart_size,-quart_size,0,-quart_size,quart_size);
-  pop();
+function mirror_quart_right(buffer) {
+  buffer.push();
+  buffer.scale(-1,1);
+  buffer.copy(buffer, 0,0,quart_size,quart_size,-quart_size,0,-quart_size,quart_size);
+  buffer.pop();
 }
 
-function mirror_half_down (){
-  push();
-  scale(1,-1);
-  copy(0,0,canvas_size,quart_size,0,-quart_size,canvas_size,-quart_size);
-  pop();
+function mirror_half_down(buffer){
+  buffer.push();
+  buffer.scale(1,-1);
+  buffer.copy(buffer, 0,0,canvas_size,quart_size,0,-quart_size,canvas_size,-quart_size);
+  buffer.pop();
 }
 
-function mirror_half_right(){
-  push();
-  scale(-1,1);
-  copy(0,0,quart_size*2,quart_size*2,-quart_size*2,0,-quart_size*2,quart_size*2);
-  pop();
+function mirror_half_right(buffer){
+  buffer.push();
+  buffer.scale(-1,1);
+  buffer.copy(buffer, 0,0,quart_size*2,quart_size*2,-quart_size*2,0,-quart_size*2,quart_size*2);
+  buffer.pop();
 }
 
-function mirror_whole_down(){
-  push();
-  scale(1,-1);
-  copy(0,0,canvas_size,quart_size*2,0,-quart_size*2,canvas_size,-quart_size*2);
-  pop();
+function mirror_whole_down(buffer){
+  buffer.push();
+  buffer.scale(1,-1);
+  buffer.copy(buffer, 0,0,canvas_size,quart_size*2,0,-quart_size*2,canvas_size,-quart_size*2);
+  buffer.pop();
 }
 
 function draw() {
   if (frameCount < 10000) {
     background(back_col);
-    push();
-    pg.push();
 
+    kaleidoscopeBuffer.background(back_col);
+
+    pg.push();
     pg2.translate(quart_size*2,quart_size*2);
     let angle = 0.3;
 
@@ -158,18 +160,31 @@ function draw() {
     pg2.translate(-quart_size*2,-quart_size*2);
     pg3.copy(pg2,quart_size*2,quart_size*2,size2,size2,0,0,size2, size2);
 
-    image(pg3,0,0);
-
-    // Replace pixel manipulation with graphics buffer approach
-    createTriangularReflection();
+    kaleidoscopeBuffer.image(pg3,0,0);
+    createTriangularReflection(kaleidoscopeBuffer);
 
     pg.pop();
 
-    console.log("Drawing "  + frameCount + " angle: " + angle);
+    mirror_quart_right(kaleidoscopeBuffer);
+    mirror_half_down(kaleidoscopeBuffer);
+    mirror_half_right(kaleidoscopeBuffer);
+    mirror_whole_down(kaleidoscopeBuffer);
 
-    mirror_quart_right();
-    mirror_half_down();
-    mirror_half_right();
-    mirror_whole_down();
+    // Calculate scale factor to fill the screen while preserving proportions
+    let scale_factor = max(width / canvas_size, height / canvas_size);
+
+    // Calculate the scaled size
+    let scaled_size = canvas_size * scale_factor;
+
+    // Calculate the position to center the cropped animation
+    let offset_x = (scaled_size - width) / 2;
+    let offset_y = (scaled_size - height) / 2;
+
+    // Draw the scaled kaleidoscope with cropping
+    copy(kaleidoscopeBuffer, offset_x / scale_factor, offset_y / scale_factor,
+         width / scale_factor, height / scale_factor,
+         0, 0, width, height);
+
+    console.log("Drawing "  + frameCount + " angle: " + angle);
   }
 }
