@@ -14,23 +14,38 @@ let size3 = quart_size;
 let time_scale=1500;
 let min_col = 50;
 let max_col = 255;
+let triangleMask; // New graphics buffer for triangular mask
+let rotatedBuffer; // Buffer for the rotated result
+
 function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
   createCanvas(canvas_size, canvas_size);
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
   pg3 = createGraphics(size3,size3);
+  triangleMask = createGraphics(quart_size, quart_size); // Triangular mask buffer
+  rotatedBuffer = createGraphics(quart_size, quart_size); // Buffer for rotated triangle
+
   pg.angleMode(DEGREES);
   pg2.angleMode(DEGREES);
+  triangleMask.angleMode(DEGREES);
+  rotatedBuffer.angleMode(DEGREES);
   angleMode(DEGREES);
+
   pg.background(back_col);
   pg.noStroke();
   pg.translate(quart_size,quart_size);
+
+  // Create triangular mask (upper triangle)
+  triangleMask.background(0);
+  triangleMask.fill(255);
+  triangleMask.noStroke();
+  triangleMask.triangle(0, 0, quart_size, 0, quart_size, quart_size);
+
   background(back_col);
   drawArr(pg);
   frameRate(30);
   console.log("Setup done!");
-
 }
 
 function genRand() {
@@ -43,15 +58,16 @@ function genRand() {
 
   let w = int(random(minSize, maxSize));
   let h = int(random(minSize, maxSize));
-  let r = random(min_col, max_col);// if (r < 50) r += 50;
-  let g = random(min_col,max_col);// if (g < 50) g += 50;
-  let b = random(min_col,max_col);//  if (b < 50) b += 50;
+  let r = random(min_col, max_col);
+  let g = random(min_col,max_col);
+  let b = random(min_col,max_col);
   let c = color(r,g,b, random(minAlp, 255));
   if (c == back_col) c = color(r,g,b, random(minAlp, 255));
   let shape = int(random(0, 5));
   let angle = int(random(0, 90));
   return [x,y,w,h,c,shape,angle,x2,y2,x3,y3];
 }
+
 function drawArr(buf) {
   for (i=0; i < maxNum; i++){
     if(objs.length < maxNum) {
@@ -60,7 +76,7 @@ function drawArr(buf) {
     }
     drawPrim(buf,objs[i]);
   }
-};
+}
 
 function drawPrim(buf, prim) {
   buf.fill(prim[4]);
@@ -74,34 +90,57 @@ function drawPrim(buf, prim) {
     default: buf.line(prim[0], prim[1], prim[2], prim[3]);
   }
   buf.rotate(prim[6]);
+}
 
+function createTriangularReflection() {
+  // Clear the rotated buffer
+  rotatedBuffer.background(back_col);
+
+  // Copy the upper triangle from pg3 to rotatedBuffer
+  rotatedBuffer.copy(pg3, 0, 0, quart_size, quart_size, 0, 0, quart_size, quart_size);
+
+  // Apply triangular mask to keep only upper triangle
+  let maskedImage = rotatedBuffer.get();
+  maskedImage.mask(triangleMask);
+
+  // Draw the masked triangle
+  image(maskedImage, 0, 0);
+
+  // Create the lower triangle by rotating and flipping the upper triangle
+  push();
+  translate(quart_size, quart_size);
+  rotate(180);
+  scale(1, -1);
+  image(maskedImage, 0, 0);
+  pop();
 }
 
 function mirror_quart_right() {
-    push();
-    scale(-1,1);
-    copy(0,0,quart_size,quart_size,-quart_size,0,-quart_size,quart_size);
-    pop();
+  push();
+  scale(-1,1);
+  copy(0,0,quart_size,quart_size,-quart_size,0,-quart_size,quart_size);
+  pop();
 }
+
 function mirror_half_down (){
-    push();
-    scale(1,-1);
-    copy(0,0,canvas_size,quart_size,0,-quart_size,canvas_size,-quart_size);
-    pop();
+  push();
+  scale(1,-1);
+  copy(0,0,canvas_size,quart_size,0,-quart_size,canvas_size,-quart_size);
+  pop();
 }
 
 function mirror_half_right(){
-    push();
-    scale(-1,1);
-    copy(0,0,quart_size*2,quart_size*2,-quart_size*2,0,-quart_size*2,quart_size*2);
-    pop();
+  push();
+  scale(-1,1);
+  copy(0,0,quart_size*2,quart_size*2,-quart_size*2,0,-quart_size*2,quart_size*2);
+  pop();
 }
 
 function mirror_whole_down(){
-    push();
-    scale(1,-1);
-    copy(0,0,canvas_size,quart_size*2,0,-quart_size*2,canvas_size,-quart_size*2);
-    pop();
+  push();
+  scale(1,-1);
+  copy(0,0,canvas_size,quart_size*2,0,-quart_size*2,canvas_size,-quart_size*2);
+  pop();
 }
 
 function draw() {
@@ -120,27 +159,10 @@ function draw() {
     pg3.copy(pg2,quart_size*2,quart_size*2,size2,size2,0,0,size2, size2);
 
     image(pg3,0,0);
-    pop();
-    let d = pixelDensity();
-    loadPixels();
-    for (i=0; i < quart_size; i++) {
-      for(j=0; j < quart_size; j++) {
-        for(xd = 0; xd < d; xd ++) {
-          for (yd = 0; yd < d; yd ++){
 
-        if (j <= i) {
-          let index = 4 * ((j * d + xd) * canvas_size * d + (i * d + yd));
-          let inv_index = 4 * ((i * d + xd) * canvas_size * d + (j * d + yd));
-          pixels[index] = pixels[inv_index];
-          pixels[index +1 ] = pixels[inv_index +1];
-          pixels[index +2] = pixels[inv_index +2];
-          pixels[index +3 ] = pixels[inv_index +3];
-        } else continue;
-          }
-        }
-      }
-    }
-    updatePixels();
+    // Replace pixel manipulation with graphics buffer approach
+    createTriangularReflection();
+
     pg.pop();
 
     console.log("Drawing "  + frameCount + " angle: " + angle);
@@ -151,4 +173,3 @@ function draw() {
     mirror_whole_down();
   }
 }
-
