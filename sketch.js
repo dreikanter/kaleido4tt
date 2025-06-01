@@ -1,5 +1,5 @@
 let objs = [];
-let maxNum = 3000;
+let maxNum = 12000; // Increased from 3000 to 12000
 let minSize = 10;
 let maxSize = 150;
 let minAlp = 200;
@@ -55,7 +55,7 @@ function setup() {
   background(back_col);
   drawArr(pg);
   frameRate(30);
-  console.log("Setup done!");
+  console.log("Setup done with " + maxNum + " shapes!");
 }
 
 function windowResized() {
