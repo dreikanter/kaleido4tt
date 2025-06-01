@@ -55,7 +55,7 @@ function setup() {
   background(back_col);
   drawArr(pg);
   frameRate(30);
-  console.log("Setup done with " + shapeCount + " shapes!");
+  // console.log("Setup done with " + shapeCount + " shapes!");
 }
 
 function windowResized() {
@@ -238,6 +238,6 @@ function draw() {
     let offset_y = (height - canvas_size) / 2;
     image(kaleidoscopeBuffer, offset_x, offset_y);
 
-    console.log("Drawing "  + frameCount + " angle: " + angle);
+    // console.log("Drawing "  + frameCount + " angle: " + angle);
   }
 }
