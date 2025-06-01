@@ -1,5 +1,5 @@
 let objs = [];
-let shapeCount = 12000; // Renamed from maxNum for clarity
+let shapeCount = 12000;
 let minSize = 10;
 let maxSize = 150;
 let minAlp = 200;
@@ -22,7 +22,6 @@ function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
   createCanvas(windowWidth, windowHeight);
 
-  // Scale up the canvas_size to match screen dimensions
   canvas_size = max(windowWidth, windowHeight);
   quart_size = canvas_size/4;
   size1 = canvas_size;
@@ -47,6 +46,7 @@ function setup() {
   pg.noStroke();
   pg.translate(quart_size,quart_size);
 
+  // Create the triangular mask once in setup
   triangleMask.background(0);
   triangleMask.fill(255);
   triangleMask.noStroke();
@@ -59,7 +59,6 @@ function setup() {
 }
 
 function windowResized() {
-  // Recalculate sizes and recreate graphics buffers for new screen size
   canvas_size = max(windowWidth, windowHeight);
   quart_size = canvas_size/4;
   size1 = canvas_size;
@@ -68,7 +67,6 @@ function windowResized() {
 
   resizeCanvas(windowWidth, windowHeight);
 
-  // Recreate all graphics buffers with new sizes
   pg = createGraphics(size1, size1);
   pg2 = createGraphics(size2, size2);
   pg3 = createGraphics(size3, size3);
@@ -86,13 +84,11 @@ function windowResized() {
   pg.noStroke();
   pg.translate(quart_size,quart_size);
 
-  // Recreate triangular mask
   triangleMask.background(0);
   triangleMask.fill(255);
   triangleMask.noStroke();
   triangleMask.triangle(0, 0, quart_size, 0, quart_size, quart_size);
 
-  // Regenerate objects for new size
   objs = [];
   drawArr(pg);
 }
@@ -142,20 +138,46 @@ function drawPrim(buf, prim) {
 }
 
 function createTriangularReflection(buffer) {
+  // Clear the rotated buffer
   rotatedBuffer.background(back_col);
   rotatedBuffer.copy(pg3, 0, 0, quart_size, quart_size, 0, 0, quart_size, quart_size);
 
-  let maskedImage = rotatedBuffer.get();
-  maskedImage.mask(triangleMask);
+  // Use clipping mask instead of creating new image objects
+  buffer.drawingContext.save();
 
-  buffer.image(maskedImage, 0, 0);
+  // Create triangular clipping path
+  buffer.drawingContext.beginPath();
+  buffer.drawingContext.moveTo(0, 0);
+  buffer.drawingContext.lineTo(quart_size, 0);
+  buffer.drawingContext.lineTo(quart_size, quart_size);
+  buffer.drawingContext.closePath();
+  buffer.drawingContext.clip();
 
+  // Draw the rotated buffer within the clipped area
+  buffer.image(rotatedBuffer, 0, 0);
+
+  buffer.drawingContext.restore();
+
+  // Create the mirrored reflection
+  buffer.drawingContext.save();
+
+  // Set up clipping for the reflection
+  buffer.drawingContext.beginPath();
+  buffer.drawingContext.moveTo(0, 0);
+  buffer.drawingContext.lineTo(0, quart_size);
+  buffer.drawingContext.lineTo(quart_size, quart_size);
+  buffer.drawingContext.closePath();
+  buffer.drawingContext.clip();
+
+  // Draw the reflection (rotated and flipped)
   buffer.push();
   buffer.translate(quart_size, quart_size);
   buffer.rotate(180);
   buffer.scale(1, -1);
-  buffer.image(maskedImage, 0, 0);
+  buffer.image(rotatedBuffer, 0, 0);
   buffer.pop();
+
+  buffer.drawingContext.restore();
 }
 
 function mirror_quart_right(buffer) {
@@ -212,7 +234,6 @@ function draw() {
     mirror_half_right(kaleidoscopeBuffer);
     mirror_whole_down(kaleidoscopeBuffer);
 
-    // Draw the kaleidoscope centered on screen at native resolution
     let offset_x = (width - canvas_size) / 2;
     let offset_y = (height - canvas_size) / 2;
     image(kaleidoscopeBuffer, offset_x, offset_y);
