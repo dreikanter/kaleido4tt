@@ -18,6 +18,11 @@ let triangleMask;
 let rotatedBuffer;
 let kaleidoscopeBuffer;
 
+// FPS tracking variables
+let lastTime = 0;
+let frameTimeHistory = [];
+let avgFPS = 0;
+
 function setup() {
   back_col = color(random(min_col,max_col),random(min_col,max_col), random(min_col,max_col));
   createCanvas(windowWidth, windowHeight);
@@ -55,7 +60,9 @@ function setup() {
   background(back_col);
   drawArr(pg);
   frameRate(30);
-  // console.log("Setup done with " + shapeCount + " shapes!");
+
+  // Initialize FPS tracking
+  lastTime = millis();
 }
 
 function windowResized() {
@@ -114,7 +121,7 @@ function genRand() {
 }
 
 function drawArr(buf) {
-  for (let i=0; i < shapeCount; i++){  // FIX 1: Added 'let' declaration
+  for (let i=0; i < shapeCount; i++){
     if(objs.length < shapeCount) {
       let newobj = genRand();
       objs.push(newobj);
@@ -208,8 +215,39 @@ function mirror_whole_down(buffer){
   buffer.pop();
 }
 
+function updateFPS() {
+  let currentTime = millis();
+  let frameTime = currentTime - lastTime;
+  lastTime = currentTime;
+
+  // Keep a rolling average of the last 30 frames
+  frameTimeHistory.push(frameTime);
+  if (frameTimeHistory.length > 30) {
+    frameTimeHistory.shift();
+  }
+
+  // Calculate average FPS
+  let avgFrameTime = frameTimeHistory.reduce((a, b) => a + b, 0) / frameTimeHistory.length;
+  avgFPS = 1000 / avgFrameTime;
+}
+
+function drawFPS() {
+  // Draw FPS in top right corner
+  push();
+  fill(255, 255, 255, 200); // White with some transparency
+  stroke(0);
+  strokeWeight(2);
+  textAlign(RIGHT, TOP);
+  textSize(12);
+  text(`FPS: ${avgFPS.toFixed(1)}`, width - 10, 10);
+  pop();
+}
+
 function draw() {
   if (frameCount < 10000) {
+    // Update FPS calculation
+    updateFPS();
+
     background(back_col);
 
     kaleidoscopeBuffer.background(back_col);
@@ -238,6 +276,7 @@ function draw() {
     let offset_y = (height - canvas_size) / 2;
     image(kaleidoscopeBuffer, offset_x, offset_y);
 
-    // console.log("Drawing "  + frameCount + " angle: " + angle);
+    // Draw FPS counter in top right
+    drawFPS();
   }
 }
