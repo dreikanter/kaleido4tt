@@ -8,39 +8,103 @@
     const CANVAS_SIZE = 1000;
     const QUADRANT_SIZE = CANVAS_SIZE / 2;
 
+    let currentAlgorithm = 0;
+
+    const FILL_ALGORITHMS = [
+      { name: "Dense Random", fill: fillRandomDense }
+    ];
+
     function setup() {
       createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      const colors = generateColorPalette();
+      const algorithm = random(FILL_ALGORITHMS);
+      generatePattern(algorithm, colors);
+    }
 
-      background(50); // Dark gray background
+    function generatePattern(algorithm, colors) {
+      // Pick background color from the palette
+      const backgroundColorFromPalette = random(colors);
+      colorMode(RGB, 255);
+      background(red(backgroundColorFromPalette), green(backgroundColorFromPalette), blue(backgroundColorFromPalette));
       noStroke();
 
-      fillBottomRightQuadrant();
+      algorithm.fill(colors);
       mirrorOriginalTriangle();
       mirrorBottomRightQuadrantToLeft();
       mirrorBottomToTop();
       drawOutline();
     }
 
-    function fillBottomRightQuadrant() {
-      // Fill entire bottom-right quadrant with solid blue color
-      fill(100, 150, 255);
-      rect(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
+    function generateColorPalette() {
+      // Generate harmonious color palette
+      colorMode(HSB, 360, 100, 100);
+      const colors = [];
+      const baseHue = random(360);
+      for (let i = 0; i < 5; i++) {
+        const hue = (baseHue + i * 72) % 360; // Pentadic harmony
+        colors.push(color(hue, random(60, 85), random(70, 90)));
+      }
+      return colors;
+    }
+
+    // Algorithm 0: Dense Random
+    function fillRandomDense(colors) {
+      for (let i = 0; i < 1000; i++) {
+        const x = random(QUADRANT_SIZE, CANVAS_SIZE);
+        const y = random(QUADRANT_SIZE, CANVAS_SIZE);
+        const size = random(10, 60) * random(0.5, 1.5);
+
+        drawRandomShape(x, y, size, colors);
+      }
+    }
+
+    function drawRandomShape(x, y, size, colors) {
+      const shapeType = floor(random(5));
+      const shapeColor = random(colors);
+      fill(red(shapeColor), green(shapeColor), blue(shapeColor), random(150, 255));
+      const rotation = random(TWO_PI);
+
+      push();
+      translate(x, y);
+      rotate(rotation);
+
+      switch(shapeType) {
+        case 0: // Circle
+          circle(0, 0, size);
+          break;
+        case 1: // Square
+          rectMode(CENTER);
+          square(0, 0, size);
+          break;
+        case 2: // Triangle
+          triangle(0, -size/2, -size/2, size/2, size/2, size/2);
+          break;
+        case 3: // Ellipse
+          ellipse(0, 0, size, size * random(0.4, 0.8));
+          break;
+        case 4: // Pentagon
+          beginShape();
+          for (let j = 0; j < 5; j++) {
+            const angle = TWO_PI * j / 5;
+            const px = cos(angle) * size/2;
+            const py = sin(angle) * size/2;
+            vertex(px, py);
+          }
+          endShape(CLOSE);
+          break;
+      }
+
+      pop();
     }
 
     function mirrorOriginalTriangle() {
-      // Copy the pixels from the triangle and place them in mirror position
       for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
         for (let y = QUADRANT_SIZE; y < CANVAS_SIZE; y++) {
-          // Check if we're in the original triangle
           if (y <= QUADRANT_SIZE + (x - QUADRANT_SIZE)) {
-            // Get pixel color from original triangle
             let pixelColor = get(x, y);
-
-            // Calculate mirror position across diagonal
             let mirrorX = QUADRANT_SIZE + (y - QUADRANT_SIZE);
             let mirrorY = QUADRANT_SIZE + (x - QUADRANT_SIZE);
 
-            // Set the mirrored pixel
             if (mirrorX >= 0 && mirrorX < CANVAS_SIZE && mirrorY >= 0 && mirrorY < CANVAS_SIZE) {
               set(mirrorX, mirrorY, pixelColor);
             }
@@ -51,35 +115,35 @@
     }
 
     function mirrorBottomRightQuadrantToLeft() {
-      // Get the bottom-right quadrant
       let bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
 
-      // Mirror it to bottom-left quadrant
       push();
       translate(QUADRANT_SIZE, QUADRANT_SIZE);
-      scale(-1, 1); // Flip horizontally
+      scale(-1, 1);
       image(bottomRightQuadrant, 0, 0);
       pop();
     }
 
     function mirrorBottomToTop() {
-      // Get the bottom half of the canvas
-      let bottomHalf = get(0, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE);
+      const bottomHalf = get(0, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE);
 
-      // Mirror it to top half
       push();
       translate(0, QUADRANT_SIZE);
-      scale(1, -1); // Flip vertically
+      scale(1, -1);
       image(bottomHalf, 0, 0);
       pop();
     }
 
     function drawOutline() {
-      // Show only the original triangle outline
       stroke(255, 200);
       strokeWeight(2);
       noFill();
       triangle(QUADRANT_SIZE, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE, CANVAS_SIZE, CANVAS_SIZE);
+    }
+
+    function mousePressed() {
+      currentAlgorithm = (currentAlgorithm + 1) % FILL_ALGORITHMS.length;
+      generatePattern(generateColorPalette());
     }
   </script>
 </body>
