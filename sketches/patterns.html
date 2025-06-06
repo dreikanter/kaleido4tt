@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/[version]/modern-normalize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; padding: 20px; }
+    </style>
+</head>
+<body>
+    <script>
+        let objs = [];
+        let shapeCount = 12000;
+        let minSize = 10;
+        let maxSize = 150;
+        let minAlp = 200;
+        let back_col;
+        let min_col = 50;
+        let max_col = 255;
+
+        function setup() {
+            back_col = color(random(min_col, max_col), random(min_col, max_col), random(min_col, max_col));
+            createCanvas(800, 800);
+
+            background(back_col);
+            noStroke();
+            translate(200, 200); // Translate to quarter position like original
+
+            drawArr(this); // 'this' refers to the main canvas
+        }
+
+        function genRand() {
+            let x = random(-200 - maxSize, 800 - maxSize);
+            let y = random(-200 - maxSize, 800 - maxSize);
+            let x2 = random(random(4) % 2 == 1 ? x + random(maxSize/4) : x - random(maxSize/4));
+            let y2 = random(random(4) % 2 == 1 ? y + random(maxSize/4) : y - random(maxSize/4));
+            let x3 = random(random(4) % 2 == 1 ? x + random(maxSize/4) : x - random(maxSize/4));
+            let y3 = random(random(4) % 2 == 1 ? y + random(maxSize/4) : y - random(maxSize/4));
+
+            let w = int(random(minSize, maxSize));
+            let h = int(random(minSize, maxSize));
+            let r = random(min_col, max_col);
+            let g = random(min_col, max_col);
+            let b = random(min_col, max_col);
+            let c = color(r, g, b, random(minAlp, 255));
+            if (c == back_col) c = color(r, g, b, random(minAlp, 255));
+            let shape = int(random(0, 5));
+            let angle = int(random(0, 90));
+            return [x, y, w, h, c, shape, angle, x2, y2, x3, y3];
+        }
+
+        function drawArr(buf) {
+            for (let i = 0; i < shapeCount; i++) {
+                if (objs.length < shapeCount) {
+                    let newobj = genRand();
+                    objs.push(newobj);
+                }
+                drawPrim(buf, objs[i]);
+            }
+        }
+
+        function drawPrim(buf, prim) {
+            buf.fill(prim[4]);
+            buf.rotate(-prim[6]);
+            switch (prim[5]) {
+                case 0: buf.square(prim[0], prim[1], prim[2]/4); break;
+                case 1: buf.rect(prim[0], prim[1], prim[2]/2, prim[3]); break;
+                case 2: buf.circle(prim[0], prim[1], prim[2]/4); break;
+                case 3: buf.ellipse(prim[0], prim[1], prim[2]/2, prim[3]/2); break;
+                case 4: buf.triangle(prim[0], prim[1], prim[7], prim[8], prim[9], prim[10]); break;
+                default: buf.line(prim[0], prim[1], prim[2], prim[3]);
+            }
+            buf.rotate(prim[6]);
+        }
+
+        function mousePressed() {
+            // Click to regenerate with new random shapes
+            objs = [];
+            back_col = color(random(min_col, max_col), random(min_col, max_col), random(min_col, max_col));
+            background(back_col);
+            push();
+            translate(200, 200);
+            drawArr(this);
+            pop();
+        }
+    </script>
+    <div>Click to refresh</div>
+</body>
+</html>
