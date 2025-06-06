@@ -1,314 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://unpkg.com/modern-normalize/modern-normalize.css">
-  <link rel="stylesheet" href="https://unpkg.com/tachyons/css/tachyons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
 </head>
-<body class="pa4">
+<body>
   <script>
-    let objects = [];
-    let backgroundColor;
-    let renderTime = 0;
-    let currentAlgorithm = 0;
-
-    const SHAPE_COUNT = 12000;
-    const MIN_SIZE = 10;
-    const MAX_SIZE = 150;
-    const MIN_ALPHA = 200;
-    const CANVAS_SIZE = 800;
-    const CENTER_X = CANVAS_SIZE / 2;
-    const CENTER_Y = CANVAS_SIZE / 2;
-    const MAX_RADIUS = CANVAS_SIZE * 0.4;
-    const TRANSLATE_OFFSET = 200;
-    const MIN_COLOR = 50;
-    const MAX_COLOR = 255;
-
-    const ALGORITHMS = [
-      { name: "Random Shapes", draw: drawRandomShapes },
-      { name: "Radial Symmetry", draw: drawRadialSymmetry },
-      { name: "Fractal Flower", draw: drawFractalFlower },
-      { name: "Geometric Grid", draw: drawGeometricMandala },
-      { name: "Wave Pattern", draw: drawWaveMandala },
-      { name: "Islamic Geometric", draw: drawIslamicPattern }
-    ];
+    const CANVAS_SIZE = 1000;
 
     function setup() {
-      backgroundColor = generateRandomColor();
       createCanvas(CANVAS_SIZE, CANVAS_SIZE);
-      angleMode(DEGREES);
 
-      const startTime = millis();
-      drawCurrentPattern();
-      renderTime = millis() - startTime;
-      updateRefreshText();
-    }
-
-    function generateRandomColor() {
-      return color(random(MIN_COLOR, MAX_COLOR), random(MIN_COLOR, MAX_COLOR), random(MIN_COLOR, MAX_COLOR));
-    }
-
-    function drawCurrentPattern() {
-      background(backgroundColor);
+      background(50); // Dark gray background
       noStroke();
 
-      const algorithm = ALGORITHMS[currentAlgorithm];
-      algorithm.draw();
+      drawTrianglePattern();
+      mirrorTriangle();
+      mirrorOriginalTriangle();
+      mirrorBottomToTop();
+      drawOutline();
     }
 
-    // Algorithm 0: Original Random Shapes
-    function drawRandomShapes() {
+    function drawTrianglePattern() {
+      // Fill entire bottom-right quadrant with solid blue color
+      fill(100, 150, 255);
+      rect(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2);
+    }
+
+    function mirrorTriangle() {
+      // Copy the pixels from the triangle and place them in mirror position
+      for (let x = CANVAS_SIZE/2; x < CANVAS_SIZE; x++) {
+        for (let y = CANVAS_SIZE/2; y < CANVAS_SIZE; y++) {
+          // Check if we're in the original triangle
+          if (y <= CANVAS_SIZE/2 + (x - CANVAS_SIZE/2)) {
+            // Get pixel color from original triangle
+            let pixelColor = get(x, y);
+
+            // Calculate mirror position across diagonal
+            let mirrorX = CANVAS_SIZE/2 + (y - CANVAS_SIZE/2);
+            let mirrorY = CANVAS_SIZE/2 + (x - CANVAS_SIZE/2);
+
+            // Set the mirrored pixel
+            if (mirrorX >= 0 && mirrorX < CANVAS_SIZE && mirrorY >= 0 && mirrorY < CANVAS_SIZE) {
+              set(mirrorX, mirrorY, pixelColor);
+            }
+          }
+        }
+      }
+      updatePixels();
+    }
+
+    function mirrorOriginalTriangle() {
+      // Get the bottom-right quadrant
+      let bottomRightQuadrant = get(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2);
+
+      // Mirror it to bottom-left quadrant
       push();
-      translate(TRANSLATE_OFFSET, TRANSLATE_OFFSET);
-      drawShapeArray();
+      translate(CANVAS_SIZE/2, CANVAS_SIZE/2);
+      scale(-1, 1); // Flip horizontally
+      image(bottomRightQuadrant, 0, 0);
       pop();
     }
 
-    function generateRandomShape() {
-      const x = random(-TRANSLATE_OFFSET - MAX_SIZE, CANVAS_SIZE - MAX_SIZE);
-      const y = random(-TRANSLATE_OFFSET - MAX_SIZE, CANVAS_SIZE - MAX_SIZE);
-      const x2 = random(random(4) % 2 == 1 ? x + random(MAX_SIZE/4) : x - random(MAX_SIZE/4));
-      const y2 = random(random(4) % 2 == 1 ? y + random(MAX_SIZE/4) : y - random(MAX_SIZE/4));
-      const x3 = random(random(4) % 2 == 1 ? x + random(MAX_SIZE/4) : x - random(MAX_SIZE/4));
-      const y3 = random(random(4) % 2 == 1 ? y + random(MAX_SIZE/4) : y - random(MAX_SIZE/4));
+    function mirrorBottomToTop() {
+      // Get the bottom half of the canvas
+      let bottomHalf = get(0, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE/2);
 
-      const width = int(random(MIN_SIZE, MAX_SIZE));
-      const height = int(random(MIN_SIZE, MAX_SIZE));
-      const red = random(MIN_COLOR, MAX_COLOR);
-      const green = random(MIN_COLOR, MAX_COLOR);
-      const blue = random(MIN_COLOR, MAX_COLOR);
-      let shapeColor = color(red, green, blue, random(MIN_ALPHA, 255));
-      if (shapeColor == backgroundColor) shapeColor = color(red, green, blue, random(MIN_ALPHA, 255));
-      const shapeType = int(random(0, 5));
-      const angle = int(random(0, 90));
-      return [x, y, width, height, shapeColor, shapeType, angle, x2, y2, x3, y3];
+      // Mirror it to top half
+      push();
+      translate(0, CANVAS_SIZE/2);
+      scale(1, -1); // Flip vertically
+      image(bottomHalf, 0, 0);
+      pop();
     }
 
-    function drawShapeArray() {
-      for (let i = 0; i < SHAPE_COUNT; i++) {
-        if (objects.length < SHAPE_COUNT) {
-          const newShape = generateRandomShape();
-          objects.push(newShape);
-        }
-        drawPrimitive(objects[i]);
-      }
-    }
-
-    function drawPrimitive(primitive) {
-      fill(primitive[4]);
-      rotate(-primitive[6]);
-      switch (primitive[5]) {
-        case 0: square(primitive[0], primitive[1], primitive[2]/4); break;
-        case 1: rect(primitive[0], primitive[1], primitive[2]/2, primitive[3]); break;
-        case 2: circle(primitive[0], primitive[1], primitive[2]/4); break;
-        case 3: ellipse(primitive[0], primitive[1], primitive[2]/2, primitive[3]/2); break;
-        case 4: triangle(primitive[0], primitive[1], primitive[7], primitive[8], primitive[9], primitive[10]); break;
-        default: line(primitive[0], primitive[1], primitive[2], primitive[3]);
-      }
-      rotate(primitive[6]);
-    }
-
-    // Algorithm 1: Radial Symmetry
-    function drawRadialSymmetry() {
-      const layers = 8;
-      const symmetryOrder = 12;
-      const colors = generateColorPalette(5);
-
-      for (let layer = 1; layer <= layers; layer++) {
-        const layerRadius = (MAX_RADIUS / layers) * layer;
-        const angleStep = 360 / symmetryOrder;
-        const petalSize = 15 + layer * 3;
-
-        fill(colors[layer % colors.length]);
-
-        for (let i = 0; i < symmetryOrder; i++) {
-          const angle = i * angleStep;
-          const x = CENTER_X + cos(angle) * layerRadius;
-          const y = CENTER_Y + sin(angle) * layerRadius;
-
-          push();
-          translate(x, y);
-          rotate(angle);
-          ellipse(0, 0, petalSize, petalSize * 0.6);
-          pop();
-        }
-      }
-    }
-
-    // Algorithm 2: Fractal Flower
-    function drawFractalFlower() {
-      const colors = generateColorPalette(4);
-      drawFractalFlowerRecursive(CENTER_X, CENTER_Y, MAX_RADIUS * 0.8, 4, 0, colors);
-    }
-
-    function drawFractalFlowerRecursive(x, y, size, depth, angle, colors) {
-      if (depth <= 0 || size < 10) return;
-
-      fill(colors[depth % colors.length]);
-      circle(x, y, size * 0.5);
-
-      const petalCount = 6;
-      for (let i = 0; i < petalCount; i++) {
-        const petalAngle = angle + (i * 360 / petalCount);
-        const petalX = x + cos(petalAngle) * size * 0.6;
-        const petalY = y + sin(petalAngle) * size * 0.6;
-
-        drawFractalFlowerRecursive(petalX, petalY, size * 0.45, depth - 1, petalAngle, colors);
-      }
-    }
-
-    // Algorithm 3: Geometric Grid
-    function drawGeometricMandala() {
-      const rings = 10;
-      const rotationStep = 15;
-      const colors = generateColorPalette(rings);
-
-      for (let ring = 1; ring <= rings; ring++) {
-        const radius = ring * (MAX_RADIUS / rings);
-        const elements = ring * 4;
-
-        fill(colors[ring - 1]);
-
-        for (let i = 0; i < elements; i++) {
-          const baseAngle = (360 / elements) * i;
-          const rotatedAngle = baseAngle + (ring * rotationStep);
-
-          const x = CENTER_X + cos(rotatedAngle) * radius;
-          const y = CENTER_Y + sin(rotatedAngle) * radius;
-
-          push();
-          translate(x, y);
-          rotate(rotatedAngle);
-
-          const size = 8 + ring * 2;
-          quad(-size/2, 0, 0, -size/2, size/2, 0, 0, size/2);
-
-          pop();
-        }
-      }
-    }
-
-    // Algorithm 4: Wave Pattern
-    function drawWaveMandala() {
-      const spokes = 24;
-      const colors = generateColorPalette(spokes);
-
-      for (let spoke = 0; spoke < spokes; spoke++) {
-        const baseAngle = (360 / spokes) * spoke;
-        fill(colors[spoke % colors.length]);
-
-        for (let r = 10; r < MAX_RADIUS; r += 8) {
-          const waveOffset = sin(r * 0.5) * 30;
-          const angle = baseAngle + waveOffset * 0.1;
-
-          const x = CENTER_X + cos(angle) * r;
-          const y = CENTER_Y + sin(angle) * r;
-
-          const dotSize = 3 + sin(r * 0.1) * 2;
-          circle(x, y, dotSize);
-        }
-      }
-    }
-
-    // Algorithm 5: Islamic Geometric Pattern
-    function drawIslamicPattern() {
-      const hexRadius = 35;
-      const rings = 6;
-      const colors = generateColorPalette(3);
-
-      for (let ring = 0; ring < rings; ring++) {
-        const hexCount = ring === 0 ? 1 : ring * 6;
-
-        for (let hex = 0; hex < hexCount; hex++) {
-          let angle, distance;
-
-          if (ring === 0) {
-            angle = 0;
-            distance = 0;
-          } else {
-            angle = (hex / (ring * 6)) * 360;
-            distance = ring * hexRadius * 1.2;
-          }
-
-          const x = CENTER_X + cos(angle) * distance;
-          const y = CENTER_Y + sin(angle) * distance;
-
-          drawHexagon(x, y, hexRadius, colors[ring % colors.length]);
-          drawHexagonPattern(x, y, hexRadius * 0.7, colors[(ring + 1) % colors.length]);
-        }
-      }
-    }
-
-    function drawHexagon(x, y, radius, fillColor) {
-      fill(fillColor);
-
-      beginShape();
-      for (let i = 0; i < 6; i++) {
-        const angle = i * 60;
-        const hx = x + cos(angle) * radius;
-        const hy = y + sin(angle) * radius;
-        vertex(hx, hy);
-      }
-      endShape(CLOSE);
-    }
-
-    function drawHexagonPattern(x, y, radius, fillColor) {
-      fill(fillColor);
-
-      beginShape();
-      for (let i = 0; i < 6; i++) {
-        const angle1 = i * 60;
-        const angle2 = (i + 0.5) * 60;
-
-        const x1 = x + cos(angle1) * radius * 0.5;
-        const y1 = y + sin(angle1) * radius * 0.5;
-        const x2 = x + cos(angle2) * radius * 0.8;
-        const y2 = y + sin(angle2) * radius * 0.8;
-
-        vertex(x1, y1);
-        vertex(x2, y2);
-      }
-      endShape(CLOSE);
-    }
-
-    function generateColorPalette(count) {
-      const colors = [];
-      const baseHue = random(360);
-
-      for (let i = 0; i < count; i++) {
-        const hue = (baseHue + i * (360 / count)) % 360;
-        const saturation = random(60, 90);
-        const brightness = random(70, 95);
-
-        colorMode(HSB, 360, 100, 100);
-        colors.push(color(hue, saturation, brightness));
-        colorMode(RGB, 255);
-      }
-
-      return colors;
-    }
-
-    function updateRefreshText() {
-      const refreshDiv = document.getElementById('refresh-text');
-      const algorithmName = ALGORITHMS[currentAlgorithm].name;
-      refreshDiv.textContent = `${algorithmName} (${renderTime}ms) - Click to refresh`;
-    }
-
-    function mousePressed() {
-      // Reset objects array when switching away from or back to random shapes
-      if (currentAlgorithm === 0 || (currentAlgorithm + 1) % ALGORITHMS.length === 0) {
-        objects = [];
-      }
-
-      currentAlgorithm = (currentAlgorithm + 1) % ALGORITHMS.length;
-      backgroundColor = generateRandomColor();
-
-      const startTime = millis();
-      drawCurrentPattern();
-      renderTime = millis() - startTime;
-      updateRefreshText();
+    function drawOutline() {
+      // Show only the original triangle outline
+      stroke(255, 200);
+      strokeWeight(2);
+      noFill();
+      triangle(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE);
     }
   </script>
-  <div class="sans-serif mb3" id="refresh-text"></div>
 </body>
 </html>
