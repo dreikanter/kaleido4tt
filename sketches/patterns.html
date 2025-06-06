@@ -15,16 +15,16 @@
 
     function drawEverything() {
       const colors = generateColorPalette();
-
-      // background(random(colors));
-      noStroke();
-
       fillUpperRightTriangle(colors);
       mirrorOriginalTriangle();
       mirrorBottomRightQuadrantToLeft();
       mirrorBottomToTop();
       drawOutline();
     }
+
+    //
+    // Colors
+    //
 
     function generateColorPalette() {
       colorMode(HSB, 360, 100, 100);
@@ -39,22 +39,57 @@
       return colors;
     }
 
+    function getContrastColor(color, colors) {
+      const bgR = red(color);
+      const bgG = green(color);
+      const bgB = blue(color);
+
+      let bestColor = colors[0];
+      let maxContrast = 0;
+
+      for (let testColor of colors) {
+        const tR = red(testColor);
+        const tG = green(testColor);
+        const tB = blue(testColor);
+
+        const contrast = Math.abs(
+          (0.299 * (bgR - tR) + 0.587 * (bgG - tG) + 0.114 * (bgB - tB)) / 255
+        );
+
+        if (contrast > maxContrast) {
+          maxContrast = contrast;
+          bestColor = testColor;
+        }
+      }
+
+      return bestColor;
+    }
+
+    //
+    // Fills
+    //
+
     function fillUpperRightTriangle(colors) {
-      const fillColor = random(colors);
+      const bgColor = random(colors);
 
       for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
         for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE) + 1; y++) {
-          set(x, y, fillColor);
+          set(x, y, bgColor);
         }
       }
 
       updatePixels();
 
-      drawTextInTriangle(colors.filter(color => color != fillColor));
+      const textColor = getContrastColor(bgColor, colors);
+      // const strokeColor = getContrastColor(textColor, colors);
+      let strokeColor = color(hue(textColor), saturation(textColor), brightness(textColor) * 0.5);
+      drawTextInTriangle(textColor, strokeColor);
     }
 
-    function drawTextInTriangle(colors) {
-      fill(random(colors));
+    function drawTextInTriangle(textColor, strokeColor) {
+      fill(textColor);
+      stroke(strokeColor);
+      strokeWeight(6);
       textAlign(CENTER, CENTER);
       textSize(56);
       textStyle(BOLD);
