@@ -6,6 +6,7 @@
 <body>
   <script>
     const CANVAS_SIZE = 1000;
+    const QUADRANT_SIZE = CANVAS_SIZE / 2;
 
     function setup() {
       createCanvas(CANVAS_SIZE, CANVAS_SIZE);
@@ -13,31 +14,31 @@
       background(50); // Dark gray background
       noStroke();
 
-      drawTrianglePattern();
-      mirrorTriangle();
+      fillBottomRightQuadrant();
       mirrorOriginalTriangle();
+      mirrorBottomRightQuadrantToLeft();
       mirrorBottomToTop();
       drawOutline();
     }
 
-    function drawTrianglePattern() {
+    function fillBottomRightQuadrant() {
       // Fill entire bottom-right quadrant with solid blue color
       fill(100, 150, 255);
-      rect(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2);
+      rect(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
     }
 
-    function mirrorTriangle() {
+    function mirrorOriginalTriangle() {
       // Copy the pixels from the triangle and place them in mirror position
-      for (let x = CANVAS_SIZE/2; x < CANVAS_SIZE; x++) {
-        for (let y = CANVAS_SIZE/2; y < CANVAS_SIZE; y++) {
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < CANVAS_SIZE; y++) {
           // Check if we're in the original triangle
-          if (y <= CANVAS_SIZE/2 + (x - CANVAS_SIZE/2)) {
+          if (y <= QUADRANT_SIZE + (x - QUADRANT_SIZE)) {
             // Get pixel color from original triangle
             let pixelColor = get(x, y);
 
             // Calculate mirror position across diagonal
-            let mirrorX = CANVAS_SIZE/2 + (y - CANVAS_SIZE/2);
-            let mirrorY = CANVAS_SIZE/2 + (x - CANVAS_SIZE/2);
+            let mirrorX = QUADRANT_SIZE + (y - QUADRANT_SIZE);
+            let mirrorY = QUADRANT_SIZE + (x - QUADRANT_SIZE);
 
             // Set the mirrored pixel
             if (mirrorX >= 0 && mirrorX < CANVAS_SIZE && mirrorY >= 0 && mirrorY < CANVAS_SIZE) {
@@ -49,13 +50,13 @@
       updatePixels();
     }
 
-    function mirrorOriginalTriangle() {
+    function mirrorBottomRightQuadrantToLeft() {
       // Get the bottom-right quadrant
-      let bottomRightQuadrant = get(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/2);
+      let bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
 
       // Mirror it to bottom-left quadrant
       push();
-      translate(CANVAS_SIZE/2, CANVAS_SIZE/2);
+      translate(QUADRANT_SIZE, QUADRANT_SIZE);
       scale(-1, 1); // Flip horizontally
       image(bottomRightQuadrant, 0, 0);
       pop();
@@ -63,11 +64,11 @@
 
     function mirrorBottomToTop() {
       // Get the bottom half of the canvas
-      let bottomHalf = get(0, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE/2);
+      let bottomHalf = get(0, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE);
 
       // Mirror it to top half
       push();
-      translate(0, CANVAS_SIZE/2);
+      translate(0, QUADRANT_SIZE);
       scale(1, -1); // Flip vertically
       image(bottomHalf, 0, 0);
       pop();
@@ -78,7 +79,7 @@
       stroke(255, 200);
       strokeWeight(2);
       noFill();
-      triangle(CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE/2, CANVAS_SIZE, CANVAS_SIZE);
+      triangle(QUADRANT_SIZE, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE, CANVAS_SIZE, CANVAS_SIZE);
     }
   </script>
 </body>
