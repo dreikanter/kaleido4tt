@@ -16,11 +16,13 @@
     function drawEverything() {
       const colors = generateColorPalette();
 
-      background(random(colors));
+      // background(random(colors));
       noStroke();
 
-      fillBottomRightQuadrant(random(colors));
+      fillUpperRightTriangle(colors);
       mirrorOriginalTriangle();
+      mirrorBottomRightQuadrantToLeft();
+      mirrorBottomToTop();
       drawOutline();
     }
 
@@ -37,33 +39,84 @@
       return colors;
     }
 
-    function fillBottomRightQuadrant(color) {
-      fill(color);
-      rect(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
+    function fillUpperRightTriangle(colors) {
+      const fillColor = random(colors);
+
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE) + 1; y++) {
+          set(x, y, fillColor);
+        }
+      }
+
+      updatePixels();
+
+      drawTextInTriangle(colors.filter(color => color != fillColor));
+    }
+
+    function drawTextInTriangle(colors) {
+      fill(random(colors));
+      textAlign(CENTER, CENTER);
+      textSize(56);
+      textStyle(BOLD);
+
+      const textX = QUADRANT_SIZE + QUADRANT_SIZE * 0.7;
+      const textY = QUADRANT_SIZE + QUADRANT_SIZE * 0.3;
+
+      text("Hola! 👋", textX, textY);
     }
 
     function mirrorOriginalTriangle() {
-      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
-        for (let y = QUADRANT_SIZE; y < CANVAS_SIZE; y++) {
-          if (y <= QUADRANT_SIZE + (x - QUADRANT_SIZE)) {
-            const pixelColor = get(x, y);
-            const mirrorX = QUADRANT_SIZE + (y - QUADRANT_SIZE);
-            const mirrorY = QUADRANT_SIZE + (x - QUADRANT_SIZE);
+      loadPixels(); // Load current pixel state
 
-            if (mirrorX < CANVAS_SIZE && mirrorY < CANVAS_SIZE) {
-              set(mirrorX, mirrorY, pixelColor);
-            }
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE); y++) {
+          const pixelColor = get(x, y);
+
+          const relativeX = x - QUADRANT_SIZE;
+          const relativeY = y - QUADRANT_SIZE;
+          const mirrorX = QUADRANT_SIZE + relativeY;
+          const mirrorY = QUADRANT_SIZE + relativeX;
+
+          // Only write to lower-left triangle (below diagonal)
+          if (mirrorY > QUADRANT_SIZE + (mirrorX - QUADRANT_SIZE)) {
+            set(mirrorX, mirrorY, pixelColor);
           }
         }
       }
+
       updatePixels();
+    }
+
+    function mirrorBottomRightQuadrantToLeft() {
+      let bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
+
+      push();
+      translate(QUADRANT_SIZE, QUADRANT_SIZE);
+      scale(-1, 1);
+      image(bottomRightQuadrant, 0, 0);
+      pop();
+    }
+
+    function mirrorBottomToTop() {
+      const bottomHalf = get(0, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE);
+
+      push();
+      translate(0, QUADRANT_SIZE);
+      scale(1, -1);
+      image(bottomHalf, 0, 0);
+      pop();
     }
 
     function drawOutline() {
       stroke(255, 200);
       strokeWeight(2);
       noFill();
-      triangle(QUADRANT_SIZE, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE, CANVAS_SIZE, CANVAS_SIZE);
+
+      triangle(
+        QUADRANT_SIZE, QUADRANT_SIZE,
+        CANVAS_SIZE + 1, QUADRANT_SIZE,
+        CANVAS_SIZE + 1, CANVAS_SIZE + 1
+      );
     }
 
     function mousePressed() {
