@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+</head>
+<body>
+  <script>
+    const CANVAS_SIZE = 1000;
+    const QUADRANT_SIZE = CANVAS_SIZE / 2;
+
+    function setup() {
+      createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+      drawEverything();
+    }
+
+    const FILLING_ALGORITHMS = [
+      {
+        name: "Mirroring Demo",
+        fill: fillMirroringDemo
+      }
+    ];
+
+    function drawEverything() {
+      random(FILLING_ALGORITHMS).fill({ colors: generateColorPalette() });
+
+      mirrorOriginalTriangle();
+      mirrorBottomRightQuadrantToLeft();
+      mirrorBottomToTop();
+    }
+
+    //
+    // Color science
+    //
+
+    function generateColorPalette() {
+      colorMode(HSB, 360, 100, 100);
+      const colors = [];
+      const baseHue = random(360);
+
+      for (let i = 0; i < 5; i++) {
+        const hue = (baseHue + i * 72) % 360;
+        colors.push(color(hue, random(20, 40), random(85, 95)));
+      }
+
+      return colors;
+    }
+
+    function getContrastColor(color, colors) {
+      const bgR = red(color);
+      const bgG = green(color);
+      const bgB = blue(color);
+
+      let bestColor = colors[0];
+      let maxContrast = 0;
+
+      for (let testColor of colors) {
+        const tR = red(testColor);
+        const tG = green(testColor);
+        const tB = blue(testColor);
+
+        const contrast = Math.abs(
+          (0.299 * (bgR - tR) + 0.587 * (bgG - tG) + 0.114 * (bgB - tB)) / 255
+        );
+
+        if (contrast > maxContrast) {
+          maxContrast = contrast;
+          bestColor = testColor;
+        }
+      }
+
+      return bestColor;
+    }
+
+    //
+    // Mirroring
+    //
+
+    function mirrorOriginalTriangle() {
+      loadPixels(); // Load current pixel state
+
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE); y++) {
+          const pixelColor = get(x, y);
+
+          const relativeX = x - QUADRANT_SIZE;
+          const relativeY = y - QUADRANT_SIZE;
+          const mirrorX = QUADRANT_SIZE + relativeY;
+          const mirrorY = QUADRANT_SIZE + relativeX;
+
+          // Only write to lower-left triangle (below diagonal)
+          if (mirrorY > QUADRANT_SIZE + (mirrorX - QUADRANT_SIZE)) {
+            set(mirrorX, mirrorY, pixelColor);
+          }
+        }
+      }
+
+      updatePixels();
+    }
+
+    function mirrorBottomRightQuadrantToLeft() {
+      const bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
+
+      push();
+      translate(QUADRANT_SIZE, QUADRANT_SIZE);
+      scale(-1, 1);
+      image(bottomRightQuadrant, 0, 0);
+      pop();
+    }
+
+    function mirrorBottomToTop() {
+      const bottomHalf = get(0, QUADRANT_SIZE, CANVAS_SIZE, QUADRANT_SIZE);
+
+      push();
+      translate(0, QUADRANT_SIZE);
+      scale(1, -1);
+      image(bottomHalf, 0, 0);
+      pop();
+    }
+
+    //
+    // User interaction
+    //
+
+    function mousePressed() {
+      drawEverything();
+    }
+
+    //
+    // Fills
+    //
+
+    function fillMirroringDemo({ colors }) {
+      const bgColor = random(colors);
+
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE) + 1; y++) {
+          set(x, y, bgColor);
+        }
+      }
+
+      updatePixels();
+
+      const textColor = getContrastColor(bgColor, colors);
+      const strokeColor = color(hue(textColor), saturation(textColor), brightness(textColor) * 0.5);
+      drawTextInTriangle(textColor, strokeColor);
+    }
+
+    function drawTextInTriangle(textColor, strokeColor) {
+      drawOutline();
+      fill(textColor);
+      stroke(strokeColor);
+      strokeWeight(6);
+      textAlign(CENTER, CENTER);
+      textSize(56);
+      textStyle(BOLD);
+
+      const textX = QUADRANT_SIZE + QUADRANT_SIZE * 0.7;
+      const textY = QUADRANT_SIZE + QUADRANT_SIZE * 0.3;
+
+      text("Hola! 👋", textX, textY);
+    }
+
+    function drawOutline() {
+      stroke(255, 200);
+      strokeWeight(2);
+      noFill();
+
+      triangle(
+        QUADRANT_SIZE, QUADRANT_SIZE,
+        CANVAS_SIZE + 1, QUADRANT_SIZE,
+        CANVAS_SIZE + 1, CANVAS_SIZE + 1
+      );
+    }
+  </script>
+</body>
+</html>
