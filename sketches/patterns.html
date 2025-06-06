@@ -16,7 +16,7 @@
     const FILLING_ALGORITHMS = [
       {
         name: "Mirroring Demo",
-        fill: fillUpperRightTriangle
+        fill: fillMirroringDemo
       }
     ];
 
@@ -129,7 +129,7 @@
     // Fills
     //
 
-    function fillUpperRightTriangle({ colors }) {
+    function fillMirroringDemo({ colors }) {
       const bgColor = random(colors);
 
       for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
