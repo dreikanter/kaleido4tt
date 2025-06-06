@@ -13,9 +13,16 @@
       drawEverything();
     }
 
+    const FILLING_ALGORITHMS = [
+      {
+        name: "Mirroring Demo",
+        fill: fillUpperRightTriangle
+      }
+    ];
+
     function drawEverything() {
-      const colors = generateColorPalette();
-      fillUpperRightTriangle(colors);
+      random(FILLING_ALGORITHMS).fill({ colors: generateColorPalette() });
+
       mirrorOriginalTriangle();
       mirrorBottomRightQuadrantToLeft();
       mirrorBottomToTop();
@@ -23,7 +30,7 @@
     }
 
     //
-    // Colors
+    // Color science
     //
 
     function generateColorPalette() {
@@ -66,39 +73,8 @@
     }
 
     //
-    // Fills
+    // Mirroring
     //
-
-    function fillUpperRightTriangle(colors) {
-      const bgColor = random(colors);
-
-      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
-        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE) + 1; y++) {
-          set(x, y, bgColor);
-        }
-      }
-
-      updatePixels();
-
-      const textColor = getContrastColor(bgColor, colors);
-      // const strokeColor = getContrastColor(textColor, colors);
-      let strokeColor = color(hue(textColor), saturation(textColor), brightness(textColor) * 0.5);
-      drawTextInTriangle(textColor, strokeColor);
-    }
-
-    function drawTextInTriangle(textColor, strokeColor) {
-      fill(textColor);
-      stroke(strokeColor);
-      strokeWeight(6);
-      textAlign(CENTER, CENTER);
-      textSize(56);
-      textStyle(BOLD);
-
-      const textX = QUADRANT_SIZE + QUADRANT_SIZE * 0.7;
-      const textY = QUADRANT_SIZE + QUADRANT_SIZE * 0.3;
-
-      text("Hola! 👋", textX, textY);
-    }
 
     function mirrorOriginalTriangle() {
       loadPixels(); // Load current pixel state
@@ -123,7 +99,7 @@
     }
 
     function mirrorBottomRightQuadrantToLeft() {
-      let bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
+      const bottomRightQuadrant = get(QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE, QUADRANT_SIZE);
 
       push();
       translate(QUADRANT_SIZE, QUADRANT_SIZE);
@@ -142,6 +118,49 @@
       pop();
     }
 
+    //
+    // User interaction
+    //
+
+    function mousePressed() {
+      drawEverything();
+    }
+
+    //
+    // Fills
+    //
+
+    function fillUpperRightTriangle({ colors }) {
+      const bgColor = random(colors);
+
+      for (let x = QUADRANT_SIZE; x < CANVAS_SIZE; x++) {
+        for (let y = QUADRANT_SIZE; y < QUADRANT_SIZE + (x - QUADRANT_SIZE) + 1; y++) {
+          set(x, y, bgColor);
+        }
+      }
+
+      updatePixels();
+
+      const textColor = getContrastColor(bgColor, colors);
+      const strokeColor = color(hue(textColor), saturation(textColor), brightness(textColor) * 0.5);
+      drawTextInTriangle(textColor, strokeColor);
+    }
+
+    function drawTextInTriangle(textColor, strokeColor) {
+      drawOutline();
+      fill(textColor);
+      stroke(strokeColor);
+      strokeWeight(6);
+      textAlign(CENTER, CENTER);
+      textSize(56);
+      textStyle(BOLD);
+
+      const textX = QUADRANT_SIZE + QUADRANT_SIZE * 0.7;
+      const textY = QUADRANT_SIZE + QUADRANT_SIZE * 0.3;
+
+      text("Hola! 👋", textX, textY);
+    }
+
     function drawOutline() {
       stroke(255, 200);
       strokeWeight(2);
@@ -152,10 +171,6 @@
         CANVAS_SIZE + 1, QUADRANT_SIZE,
         CANVAS_SIZE + 1, CANVAS_SIZE + 1
       );
-    }
-
-    function mousePressed() {
-      drawEverything();
     }
   </script>
 </body>
